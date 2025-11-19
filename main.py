@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Form, UploadFile, File
-from services.ocr_service import extract_text_from_documents
+from src.services.ocr_service import extract_text_from_documents
 
 app = FastAPI()
 
