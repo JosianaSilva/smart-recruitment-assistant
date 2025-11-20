@@ -2,8 +2,9 @@ import json
 from typing import Dict, List, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema import HumanMessage
-from ..utils.config import config
+from ..utils import config, decode_toon_to_json
 from ..models.cv_model import CVSummary
+from toon_python import encode, EncodeOptions, Delimiter
 
 class LLMService:
     def __init__(self):
@@ -15,36 +16,43 @@ class LLMService:
     
     def generate_cv_summary(self, cv_text: str, filename: str) -> CVSummary:
         """Gera um resumo estruturado do CV"""
-        prompt = f"""
-        Analise o seguinte currículo e gere um resumo estruturado em JSON:
-        
-        CV Text: {cv_text}
-        
-        Retorne APENAS um JSON válido com a seguinte estrutura:
-        {{
-            "filename": "{filename}",
+        cv_data = encode({
+            "filename": f"{filename}",
             "summary": "Resumo profissional do candidato",
             "key_skills": ["skill1", "skill2", "skill3"],
-            "experience_years": numero_de_anos_experiencia_ou_null,
+            "experience_years": "numero_de_anos_experiencia_ou_null",
             "education": "Formação acadêmica principal ou null",
-            "contact_info": {{
+            "contact_info": {
                 "email": "email_se_encontrado_ou_null",
                 "phone": "telefone_se_encontrado_ou_null",
                 "location": "localização_se_encontrada_ou_null"
-            }}
-        }}
+            }
+        })
+
+        prompt = f"""
+        Analise o seguinte currículo e gere um resumo estruturado em TOON (Token-Oriented Object Notation):
+        
+        CV Text: {cv_text}
+        
+        Retorne APENAS um TOON válido com a seguinte estrutura:
+        ```toon
+        {cv_data}
+        ```
         """
         
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)])
-            # Valida o JSON retornado
-            json_text = response.content.strip()
-            if json_text.startswith('```json'):
-                json_text = json_text[7:-3]
-            elif json_text.startswith('```'):
-                json_text = json_text[3:-3]
+            print(f"Resposta LLM para {filename}: {response.content}")
+
+            # Valida o TOON retornado
+            toon_text = response.content.strip()
+            if toon_text.startswith('```toon'):
+                toon_text = toon_text[7:-3]
+            elif toon_text.startswith('```'):
+                toon_text = toon_text[3:-3]
             
-            summary_data = json.loads(json_text)
+            toon_object = decode_toon_to_json(toon_text.strip())
+            summary_data = json.loads(toon_object)
             return CVSummary(**summary_data)
         except Exception as e:
             return CVSummary(
@@ -67,6 +75,20 @@ class LLMService:
             for summary in cv_summaries
         ])
         
+        comparison_data = encode({
+            "ranking": [
+                {
+                    "filename": "nome_arquivo",
+                    "score": "numero_de_0_a_100",
+                    "reasoning": "justificativa",
+                    "strengths": ["ponto_forte_1", "ponto_forte_2"],
+                    "weaknesses": ["ponto_fraco_1", "ponto_fraco_2"]
+                }
+            ],
+            "summary": "Resumo da análise comparativa",
+            "recommendation": "Recomendação baseada na query"
+        })
+        
         prompt = f"""
         Baseado nos seguintes candidatos e na query do usuário, faça uma análise comparativa:
         
@@ -75,31 +97,22 @@ class LLMService:
         Candidatos:
         {summaries_text}
         
-        Retorne APENAS um JSON válido com:
-        {{
-            "ranking": [
-                {{
-                    "filename": "nome_arquivo",
-                    "score": numero_de_0_a_100,
-                    "reasoning": "justificativa",
-                    "strengths": ["ponto_forte_1", "ponto_forte_2"],
-                    "weaknesses": ["ponto_fraco_1", "ponto_fraco_2"]
-                }}
-            ],
-            "summary": "Resumo da análise comparativa",
-            "recommendation": "Recomendação baseada na query"
-        }}
+        Retorne APENAS um TOON válido com a seguinte estrutura:
+        ```toon
+        {comparison_data}
+        ```
         """
         
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)])
-            json_text = response.content.strip()
-            if json_text.startswith('```json'):
-                json_text = json_text[7:-3]
-            elif json_text.startswith('```'):
-                json_text = json_text[3:-3]
+            toon_text = response.content.strip()
+            if toon_text.startswith('```toon'):
+                toon_text = toon_text[7:-3]
+            elif toon_text.startswith('```'):
+                toon_text = toon_text[3:-3]
             
-            return json.loads(json_text)
+            toon_object = decode_toon_to_json(toon_text.strip())
+            return json.loads(toon_object)
         except Exception as e:
             return {
                 "ranking": [],
@@ -118,6 +131,12 @@ class LLMService:
             for summary in cv_summaries
         ])
         
+        answer_data = encode({
+            "answer": "Resposta clara e objetiva à pergunta do usuário",
+            "relevant_candidates": ["candidato1", "candidato2"],
+            "confidence": "alto_medio_baixo"
+        })
+        
         prompt = f"""
         Com base nos seguintes currículos, responda à pergunta do usuário:
         
@@ -126,12 +145,23 @@ class LLMService:
         Candidatos:
         {summaries_text}
         
-        Forneça uma resposta clara e objetiva.
+        Retorne APENAS um TOON válido com a seguinte estrutura:
+        ```toon
+        {answer_data}
+        ```
         """
         
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)])
-            return response.content
+            toon_text = response.content.strip()
+            if toon_text.startswith('```toon'):
+                toon_text = toon_text[7:-3]
+            elif toon_text.startswith('```'):
+                toon_text = toon_text[3:-3]
+            
+            toon_object = decode_toon_to_json(toon_text.strip())
+            answer_data = json.loads(toon_object)
+            return answer_data.get("answer", "Erro ao processar resposta")
         except Exception as e:
             return f"Erro ao processar query: {str(e)}"
 
