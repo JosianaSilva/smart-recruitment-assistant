@@ -12,7 +12,7 @@ class CVSummary(BaseModel):
     filename: str
     summary: str
     key_skills: List[str]
-    experience_years: Optional[int]
+    experience_years: Optional[float]
     education: Optional[str]
     contact_info: Dict[str, Any]
     
