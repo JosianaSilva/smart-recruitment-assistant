@@ -3,8 +3,8 @@ fastapi==0.121.2
 fastapi[standard]==0.121.2
 fastapi-cli==0.0.16
 fastapi-cloud-cli==0.3.1
-uvicorn==0.30.0
-python-multipart==0.0.9
+uvicorn==0.38.0
+python-multipart==0.0.20
 
 # OCR e processamento de documentos
 easyocr==1.7.2
@@ -21,11 +21,11 @@ langchain-text-splitters==0.3.11
 python-dotenv==1.1.1
 
 # Banco de dados
-pymongo==4.10.1
+pymongo==4.15.4
 
 # Validação e modelos
-pydantic==2.10.1
+pydantic==2.12.4
 
 # Utilitários
-Pillow==10.4.0
-numpy==2.2.1
+Pillow==12.0.0
+numpy==2.2.6
