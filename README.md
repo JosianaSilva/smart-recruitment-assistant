@@ -18,6 +18,35 @@ Sistema para análise automática de currículos usando OCR (EasyOCR) e LLM (Goo
 
 ## 🛠️ Instalação
 
+### Opção 1: Docker Compose
+
+1. Configure o arquivo `.env` com suas variáveis de ambiente:
+```bash
+cp .env.example .env
+nano .env # adicione suas variávei de ambiente usando nano ou outro editor de texto
+```
+
+2. Execute o sistema completo com Docker Compose:
+```bash
+# Iniciar o serviço (API + MongoDB)
+docker-compose up -d
+
+# Ver logs em tempo real
+docker-compose logs -f
+
+# Ver logs de um serviço específico
+docker-compose logs -f api
+docker-compose logs -f mongodb
+
+# Parar o serviço
+docker-compose down
+
+# Parar e remover volumes (dados do MongoDB)
+docker-compose down -v
+```
+
+### Opção 2: Instalação Local
+
 1. Instale as dependências:
 ```bash
 pip install -r requirements.txt
@@ -27,16 +56,21 @@ pip install -r requirements.txt
 
 ## 🚀 Execução
 
-### Desenvolvimento
+### Com Docker Compose
 ```bash
-cd src
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Iniciar serviços
+docker-compose up -d
+
+# Verificar status
+docker-compose ps
+
+# Acessar a API em: http://localhost:8000
+# Documentação em: http://localhost:8000/docs
 ```
 
-### Produção
+### Desenvolvimento Local
 ```bash
-cd src
-python main.py
+python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## 📚 Uso da API
@@ -73,6 +107,8 @@ curl -X POST "http://localhost:8000/api/analyze" \
 
 ```
 src/
+├── db/          # Script de inicialização do Banco
+│   └── init_db.py
 ├── services/          # Lógica de negócio
 │   ├── ocr_service.py      # Processamento OCR
 │   ├── llm_service.py      # Integração com Gemini
@@ -84,7 +120,8 @@ src/
 │   ├── cv_model.py
 │   └── analysis_model.py
 ├── utils/             # Utilitários
-│   ├── file_utils.py
-│   └── config.py
+│   ├── config.py
+│   ├── decode_toon.py
+│   └── file_utils.py
 └── main.py           # Aplicação principal
 ```
